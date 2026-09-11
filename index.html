@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Handschrift — dein Text, deine Schrift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Work+Sans:wght@400;500;600;700&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F3EC;
+  --surface:#FFFFFF;
+  --surface-2:#FBF9F4;
+  --ink:#211F1B;
+  --muted:#79705F;
+  --accent:#3B4C86;
+  --accent-2:#2E3D6E;
+  --accent-soft:#E1E4F0;
+  --gold:#B08D57;
+  --gold-soft:#F1E8D8;
+  --border:#E6E0D2;
+  --border-strong:#D8D0BC;
+  --danger:#9A4B3F;
+  --ok:#4C7A56;
+  --radius-s:6px;
+  --radius-m:12px;
+  --shadow:0 1px 2px rgba(33,31,27,0.06), 0 6px 18px rgba(33,31,27,0.06);
+  --font-serif:'Lora', Georgia, serif;
+  --font-sans:'Work Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-hand-fallback:'Caveat', cursive;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-sans);
+  font-size:15px;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+::selection{background:var(--accent-soft);}
+
+/* ---------- App shell ---------- */
+#app{
+  display:flex;
+  flex-direction:column;
+  height:100%;
+}
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 22px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface);
+  flex-shrink:0;
+  gap:16px;
+}
+.brand{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+}
+.brand .wordmark{
+  font-family:var(--font-serif);
+  font-style:italic;
+  font-size:22px;
+  font-weight:600;
+  color:var(--ink);
+  letter-spacing:-0.2px;
+}
+.brand .tagline{
+  font-size:12.5px;
+  color:var(--muted);
+  display:none;
+}
+@media(min-width:720px){ .brand .tagline{display:inline;} }
+
+.tabs{
+  display:flex;
+  gap:4px;
+  background:var(--surface-2);
+  padding:4px;
+  border-radius:999px;
+  border:1px solid var(--border);
+}
+.tab-btn{
+  border:none;
+  background:transparent;
+  padding:8px 16px;
+  border-radius:999px;
+  font-size:13.5px;
+  font-weight:500;
+  color:var(--muted);
+  transition:background .15s, color .15s;
+  white-space:nowrap;
+}
+.tab-btn.active{
+  background:var(--ink);
+  color:#fff;
+}
+
+.top-right{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.progress-chip{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 12px 6px 6px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:var(--surface-2);
+  font-size:12.5px;
+  color:var(--muted);
+  cursor:pointer;
+}
+.progress-ring{
+  width:26px;height:26px;flex-shrink:0;
+}
+.export-btn{
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  padding:9px 16px;
+  border-radius:8px;
+  font-size:13.5px;
+  font-weight:600;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  box-shadow:var(--shadow);
+}
+.export-btn:hover{background:var(--accent-2);}
+
+/* ---------- Views ---------- */
+.view{
+  flex:1;
+  min-height:0;
+  display:none;
+}
+.view.active{display:flex;}
+
+/* ===== Editor view ===== */
+#view-editor{
+  width:100%;
+}
+.sidebar{
+  width:290px;
+  flex-shrink:0;
+  border-right:1px solid var(--border);
+  background:var(--surface);
+  overflow-y:auto;
+  padding:18px 18px 40px;
+}
+.sidebar h3{
+  font-size:11.5px;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--muted);
+  margin:20px 0 10px;
+  font-weight:600;
+}
+.sidebar h3:first-child{margin-top:0;}
+.field{margin-bottom:12px;}
+.field label{
+  display:flex;
+  justify-content:space-between;
+  font-size:12.5px;
+  color:var(--ink);
+  margin-bottom:6px;
+}
+.field label .val{color:var(--muted); font-variant-numeric:tabular-nums;}
+.swatches{display:flex; gap:8px; flex-wrap:wrap;}
+.swatch{
+  width:26px;height:26px;border-radius:50%;
+  border:2px solid transparent;
+  cursor:pointer;
+  position:relative;
+}
+.swatch.selected{border-color:var(--ink);}
+.swatch.selected::after{
+  content:'';
+  position:absolute; inset:-4px;
+  border:1px solid var(--border-strong);
+  border-radius:50%;
+}
+.seg{
+  display:flex;
+  border:1px solid var(--border);
+  border-radius:8px;
+  overflow:hidden;
+}
+.seg button{
+  flex:1;
+  border:none;
+  background:var(--surface);
+  padding:8px 4px;
+  font-size:12px;
+  color:var(--muted);
+  border-right:1px solid var(--border);
+}
+.seg button:last-child{border-right:none;}
+.seg button.active{background:var(--ink); color:#fff;}
+select.select-full{
+  width:100%;
+  padding:8px 10px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  font-size:13px;
+  color:var(--ink);
+}
+input[type=range]{
+  width:100%;
+  accent-color:var(--accent);
+}
+input[type=color]{
+  width:34px;height:26px;border:1px solid var(--border);border-radius:6px;padding:0;background:none;
+}
+.editor-main{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  background:#EFEAE0;
+}
+.editor-toolbar{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 20px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface);
+}
+.editor-toolbar .divider{width:1px;height:20px;background:var(--border);}
+.mini-btn{
+  border:1px solid var(--border);
+  background:var(--surface);
+  border-radius:7px;
+  padding:6px 11px;
+  font-size:12.5px;
+  color:var(--ink);
+  display:flex; align-items:center; gap:5px;
+}
+.mini-btn:hover{background:var(--surface-2);}
+.split{
+  flex:1;
+  display:flex;
+  min-height:0;
+}
+.text-pane{
+  width:38%;
+  min-width:260px;
+  border-right:1px solid var(--border);
+  background:var(--surface);
+  display:flex;
+  flex-direction:column;
+}
+#text-input{
+  flex:1;
+  border:none;
+  resize:none;
+  padding:22px 24px;
+  font-size:15px;
+  line-height:1.65;
+  font-family:var(--font-sans);
+  color:var(--ink);
+  outline:none;
+}
+#text-input::placeholder{color:#B9B0A0;}
+.preview-pane{
+  flex:1;
+  overflow-y:auto;
+  padding:28px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:24px;
+}
+.page-shell{
+  box-shadow:0 2px 5px rgba(33,31,27,0.08), 0 12px 30px rgba(33,31,27,0.10);
+  background:#fff;
+}
+.page-shell canvas{display:block;}
+.empty-hint{
+  margin-top:80px;
+  text-align:center;
+  color:var(--muted);
+  max-width:320px;
+  font-size:13.5px;
+  line-height:1.6;
+}
+.empty-hint .big{
+  font-family:var(--font-hand-fallback);
+  font-size:30px;
+  color:var(--accent);
+  display:block;
+  margin-bottom:8px;
+}
+
+/* ===== Capture view ===== */
+#view-capture{
+  width:100%;
+  overflow-y:auto;
+  flex-direction:column;
+}
+.capture-header{
+  padding:26px 32px 10px;
+  max-width:980px;
+  width:100%;
+  margin:0 auto;
+}
+.capture-header h1{
+  font-family:var(--font-serif);
+  font-weight:600;
+  font-size:26px;
+  margin:0 0 6px;
+}
+.capture-header p{
+  color:var(--muted);
+  font-size:13.5px;
+  margin:0 0 18px;
+  max-width:560px;
+  line-height:1.55;
+}
+.progress-bar-row{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:4px;
+}
+.progress-track{
+  flex:1;
+  height:8px;
+  border-radius:999px;
+  background:var(--border);
+  overflow:hidden;
+}
+.progress-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--accent),var(--gold));
+  border-radius:999px;
+  transition:width .3s;
+}
+.progress-label{font-size:12.5px; color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums;}
+.cat-chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:14px 0 6px;
+}
+.cat-chip{
+  font-size:12px;
+  padding:5px 11px 5px 9px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  color:var(--muted);
+  display:flex;
+  align-items:center;
+  gap:5px;
+  background:var(--surface);
+}
+.cat-chip.done{border-color:var(--ok); color:var(--ok); background:#F0F6F1;}
+.cat-chip .dot{width:6px;height:6px;border-radius:50%;background:var(--border-strong);}
+.cat-chip.done .dot{background:var(--ok);}
+
+.privacy-note{
+  max-width:980px; margin:0 auto; padding:0 32px 8px;
+  display:flex; align-items:center; gap:8px;
+  color:var(--muted); font-size:12px;
+  line-height:1.5;
+}
+.profile-actions{
+  display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;
+}
+
+.groups-wrap{
+  max-width:980px;
+  margin:0 auto;
+  padding:6px 32px 60px;
+  width:100%;
+}
+.group{margin-bottom:26px;}
+.group h2{
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--muted);
+  font-weight:600;
+  margin:0 0 10px;
+}
+.char-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(58px,1fr));
+  gap:8px;
+}
+.char-tile{
+  aspect-ratio:1/1;
+  border-radius:10px;
+  border:1.5px solid var(--border);
+  background:var(--surface);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  position:relative;
+  transition:border-color .12s, transform .08s;
+}
+.char-tile:active{transform:scale(0.95);}
+.char-tile .glyph{
+  font-family:var(--font-hand-fallback);
+  font-size:22px;
+  color:var(--ink);
+  line-height:1;
+}
+.char-tile .cnt{
+  font-size:9px;
+  color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.char-tile.partial{border-color:var(--gold);}
+.char-tile.done{border-color:var(--ok); background:#F5FAF6;}
+.char-tile.done::after{
+  content:'✓';
+  position:absolute; top:3px; right:5px;
+  font-size:9px; color:var(--ok); font-weight:700;
+}
+
+/* ===== Capture modal ===== */
+.modal-overlay{
+  position:fixed; inset:0;
+  background:rgba(33,31,27,0.45);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:50;
+  padding:16px;
+}
+.modal-overlay.open{display:flex;}
+.capture-modal{
+  background:var(--surface);
+  border-radius:16px;
+  width:100%;
+  max-width:520px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.25);
+  overflow:hidden;
+}
+.cm-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 20px;
+  border-bottom:1px solid var(--border);
+}
+.cm-head .cm-title{font-size:13px; color:var(--muted);}
+.cm-head .cm-char{
+  font-family:var(--font-serif);
+  font-size:20px;
+  font-weight:600;
+}
+.cm-close{
+  border:none; background:none; font-size:20px; color:var(--muted); line-height:1; padding:4px;
+}
+.cm-body{padding:18px 20px 6px;}
+.cm-variant-tabs{
+  display:flex; gap:8px; margin-bottom:12px;
+}
+.cm-variant-tab{
+  flex:1;
+  border:1px solid var(--border);
+  background:var(--surface-2);
+  border-radius:8px;
+  padding:8px 4px;
+  font-size:12px;
+  color:var(--muted);
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+}
+.cm-variant-tab.active{border-color:var(--accent); color:var(--accent); background:var(--accent-soft);}
+.cm-variant-tab .vs{font-size:9px;}
+.cm-canvas-wrap{
+  border:1.5px dashed var(--border-strong);
+  border-radius:10px;
+  background:#FEFDFB;
+  touch-action:none;
+  margin-bottom:14px;
+  position:relative;
+}
+.cm-canvas-wrap canvas{display:block; width:100%; touch-action:none;}
+.cm-hint{
+  position:absolute; bottom:6px; left:10px;
+  font-size:10.5px; color:#C9C0AF;
+  pointer-events:none;
+}
+.cm-actions{
+  display:flex; gap:8px; padding:0 20px 18px;
+}
+.cm-actions button{
+  flex:1;
+  padding:11px 6px;
+  border-radius:9px;
+  font-size:13px;
+  font-weight:600;
+  border:1px solid var(--border);
+  background:var(--surface);
+}
+.cm-actions .primary{background:var(--ink); color:#fff; border-color:var(--ink);}
+.cm-actions .ghost{color:var(--muted); font-weight:500;}
+.cm-nav{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:0 20px 20px;
+  font-size:12.5px;
+  color:var(--muted);
+}
+.cm-nav button{border:none;background:none;color:var(--accent); font-weight:600; font-size:12.5px;}
+
+/* toast */
+#toast{
+  position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--ink); color:#fff; padding:10px 18px; border-radius:999px;
+  font-size:13px; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+  z-index:100;
+}
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+.export-menu{
+  position:absolute; top:56px; right:22px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.15);
+  width:200px;
+  padding:6px;
+  display:none;
+  z-index:60;
+}
+.export-menu.open{display:block;}
+.export-menu button{
+  display:flex; align-items:center; gap:9px;
+  width:100%;
+  padding:9px 10px;
+  border:none; background:none;
+  border-radius:7px;
+  font-size:13px;
+  text-align:left;
+  color:var(--ink);
+}
+.export-menu button:hover{background:var(--surface-2);}
+
+@media(max-width:860px){
+  .brand .tagline{display:none;}
+  .sidebar{position:absolute; left:0; top:0; bottom:0; z-index:20; transform:translateX(-100%); transition:transform .2s; box-shadow:0 0 30px rgba(0,0,0,0.15);}
+  .sidebar.open{transform:translateX(0);}
+  .split{position:relative;}
+  .text-pane{width:100%; min-width:0;}
+  .preview-pane{display:none;}
+  .split.show-preview .text-pane{display:none;}
+  .split.show-preview .preview-pane{display:flex;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <div class="brand">
+      <span class="wordmark">Handschrift</span>
+      <span class="tagline">dein Text, deine Schrift</span>
+    </div>
+    <div class="tabs" id="tabs">
+      <button class="tab-btn active" data-view="editor">Schreiben</button>
+      <button class="tab-btn" data-view="capture">Meine Handschrift</button>
+    </div>
+    <div class="top-right">
+      <div class="progress-chip" id="progress-chip" title="Zur Handschrift-Erfassung">
+        <svg class="progress-ring" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="15.5" fill="none" stroke="#E6E0D2" stroke-width="3"></circle>
+          <circle id="ring-fill" cx="18" cy="18" r="15.5" fill="none" stroke="#3B4C86" stroke-width="3"
+            stroke-dasharray="97.4" stroke-dashoffset="97.4" stroke-linecap="round" transform="rotate(-90 18 18)"></circle>
+        </svg>
+        <span id="progress-text">0% erfasst</span>
+      </div>
+      <div style="position:relative;">
+        <button class="export-btn" id="export-toggle">Exportieren ▾</button>
+        <div class="export-menu" id="export-menu">
+          <button data-export="png">⬇ Als PNG herunterladen</button>
+          <button data-export="jpg">⬇ Als JPG herunterladen</button>
+          <button data-export="pdf">⬇ Als PDF exportieren</button>
+          <button data-export="copy">⧉ Als Bild kopieren</button>
+          <button data-export="print">🖶 Drucken</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== EDITOR VIEW ===== -->
+  <div class="view active" id="view-editor" style="display:flex;">
+    <div class="sidebar" id="sidebar">
+      <h3>Papier</h3>
+      <div class="field">
+        <label>Linierung</label>
+        <select class="select-full" id="opt-paper">
+          <option value="blank">Blanko</option>
+          <option value="lined" selected>Liniert</option>
+          <option value="grid">Kariert</option>
+          <option value="mm">Millimeterpapier</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Seitengröße</label>
+        <select class="select-full" id="opt-pagesize">
+          <option value="a4" selected>A4</option>
+          <option value="a5">A5</option>
+          <option value="letter">Letter</option>
+        </select>
+      </div>
+
+      <h3>Stift</h3>
+      <div class="field">
+        <label>Werkzeug</label>
+        <div class="seg" id="opt-pen">
+          <button data-v="ballpoint" class="active">Kugelschr.</button>
+          <button data-v="fineliner">Fineliner</button>
+          <button data-v="pencil">Bleistift</button>
+          <button data-v="fountain">Füller</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Farbe</label>
+        <div class="swatches" id="opt-color">
+          <div class="swatch selected" data-c="#1B1B1E" style="background:#1B1B1E"></div>
+          <div class="swatch" data-c="#1A3A8F" style="background:#1A3A8F"></div>
+          <div class="swatch" data-c="#0E2C5C" style="background:#0E2C5C"></div>
+          <div class="swatch" data-c="#8E1F1F" style="background:#8E1F1F"></div>
+          <input type="color" id="opt-color-custom" value="#1B1B1E" title="Eigene Farbe">
+        </div>
+      </div>
+
+      <h3>Schreibstil</h3>
+      <div class="field">
+        <div class="seg" id="opt-style">
+          <button data-v="normal" class="active">Normal</button>
+          <button data-v="clean">Sauber</button>
+          <button data-v="fast">Schnell</button>
+          <button data-v="messy">Locker</button>
+        </div>
+      </div>
+
+      <h3>Layout</h3>
+      <div class="field">
+        <label>Schriftgröße <span class="val" id="v-fontsize">18 pt</span></label>
+        <input type="range" id="opt-fontsize" min="10" max="26" value="18">
+      </div>
+      <div class="field">
+        <label>Zeilenabstand <span class="val" id="v-lineheight">1.0×</span></label>
+        <input type="range" id="opt-lineheight" min="0.8" max="2" step="0.1" value="1">
+      </div>
+      <div class="field">
+        <label>Seitenrand <span class="val" id="v-margin">18 mm</span></label>
+        <input type="range" id="opt-margin" min="8" max="30" value="18">
+      </div>
+    </div>
+
+    <div class="editor-main">
+      <div class="editor-toolbar">
+        <button class="mini-btn" id="btn-toggle-sidebar" title="Einstellungen">⚙ Einstellungen</button>
+        <div class="divider"></div>
+        <button class="mini-btn" id="btn-mobile-preview" style="display:none;">👁 Vorschau</button>
+        <span style="margin-left:auto; font-size:12px; color:var(--muted);" id="page-count-label"></span>
+      </div>
+      <div class="split" id="split">
+        <div class="text-pane">
+          <textarea id="text-input" placeholder="Tippe oder füge hier deinen Text ein …
+
+Zum Beispiel:
+Der Satz des Pythagoras lautet: a² + b² = c².
+
+Tipp: Nutze ^ für Hochzahlen, z.B. x^2, und schreibe Brüche als a/b."></textarea>
+        </div>
+        <div class="preview-pane" id="preview-pane">
+          <div class="empty-hint" id="empty-hint">
+            <span class="big">✎</span>
+            Beginne zu tippen — deine Seite erscheint hier in deiner Handschrift.<br><br>
+            Noch keine eigenen Zeichen erfasst? Wechsle oben zu <strong>„Meine Handschrift“</strong>, um loszulegen. Bis dahin nutzen wir eine Platzhalter-Schrift.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CAPTURE VIEW ===== -->
+  <div class="view" id="view-capture">
+    <div class="capture-header">
+      <h1>Meine Handschrift</h1>
+      <p>Erfasse jedes Zeichen einmal — oder mehrfach für mehr Abwechslung. Deine Handschrift bleibt dabei ausschließlich auf diesem Gerät gespeichert.</p>
+      <div class="progress-bar-row">
+        <div class="progress-track"><div class="progress-fill" id="cap-progress-fill" style="width:0%"></div></div>
+        <div class="progress-label" id="cap-progress-label">0 / 0 Zeichen</div>
+      </div>
+      <div class="cat-chips" id="cat-chips"></div>
+      <div class="profile-actions">
+        <button class="mini-btn" id="btn-export-profile">⬇ Profil als Datei sichern</button>
+        <button class="mini-btn" id="btn-import-profile">⬆ Profil-Datei laden</button>
+        <input type="file" id="import-file-input" accept="application/json" style="display:none">
+      </div>
+    </div>
+    <div class="privacy-note">🔒 Deine Handschrift bleibt auf diesem Gerät gespeichert — sie wird nicht hochgeladen. Um sie dauerhaft zu sichern oder auf einem anderen Gerät zu nutzen, lade sie unten als Datei herunter.</div>
+    <div class="groups-wrap" id="groups-wrap"></div>
+  </div>
+</div>
+
+<!-- ===== Capture modal ===== -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="capture-modal">
+    <div class="cm-head">
+      <div>
+        <div class="cm-title">Zeichen schreiben</div>
+        <div class="cm-char" id="cm-char">A</div>
+      </div>
+      <button class="cm-close" id="cm-close">✕</button>
+    </div>
+    <div class="cm-body">
+      <div class="cm-variant-tabs" id="cm-variant-tabs"></div>
+      <div class="cm-canvas-wrap" id="cm-canvas-wrap">
+        <canvas id="cm-canvas"></canvas>
+        <div class="cm-hint">Mit Stift, Finger oder Maus schreiben</div>
+      </div>
+    </div>
+    <div class="cm-actions">
+      <button class="ghost" id="cm-clear">Löschen</button>
+      <button class="ghost" id="cm-undo">Rückgängig</button>
+      <button class="primary" id="cm-save">Übernehmen</button>
+    </div>
+    <div class="cm-nav">
+      <button id="cm-prev">← Vorheriges</button>
+      <span id="cm-position"></span>
+      <button id="cm-next">Nächstes →</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+"use strict";
+
+/* =========================================================================
+   1) DATENMODELL: Zeichensatz
+   ========================================================================= */
+const GROUPS = [
+  { id:'upper',  label:'Großbuchstaben',        chars:'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('') },
+  { id:'lower',  label:'Kleinbuchstaben',        chars:'abcdefghijklmnopqrstuvwxyz'.split('') },
+  { id:'digits', label:'Zahlen',                 chars:'0123456789'.split('') },
+  { id:'punct',  label:'Satzzeichen',            chars:".,;:!?'\"-_()[]{}/\\+=*%&#@".split('') },
+  { id:'math',   label:'Mathematik',             chars:['−','×','÷','≠','≤','≥','±','²','³','√','∞','π','∑','∫'] },
+  { id:'german', label:'Deutsche Sonderzeichen', chars:['ä','ö','ü','Ä','Ö','Ü','ß'] },
+  { id:'french', label:'Französische Zeichen',   chars:['é','è','ê','ë','à','â','î','ï','ô','ù','û','ç','œ','É','È','Ê','Ë','À','Â','Î','Ï','Ô','Ù','Û','Ç'] },
+];
+const ALL_CHARS = GROUPS.flatMap(g => g.chars);
+const CHAR_TO_GROUP = {};
+GROUPS.forEach(g => g.chars.forEach(c => CHAR_TO_GROUP[c] = g.id));
+
+const MAX_VARIANTS = 3;
+
+/* Erfassungs-Rasterhöhe (quadratische Referenzeinheit für alle Buchstaben) */
+const CAP_H = 320;
+const CAP_W = 280;
+const GUIDE = {
+  ascender: 0.08 * CAP_H,
+  capline:  0.14 * CAP_H,
+  xheight:  0.46 * CAP_H,
+  baseline: 0.74 * CAP_H,
+  descender:0.94 * CAP_H,
+};
+
+/* =========================================================================
+   2) SPEICHER: IndexedDB für Handschrift-Daten, localStorage für Settings
+   ========================================================================= */
+const Store = (() => {
+  let dbPromise = null;
+  function open() {
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open('handschrift-db', 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains('chars')) {
+          db.createObjectStore('chars', { keyPath: 'char' });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return dbPromise;
+  }
+  async function getChar(ch) {
+    const db = await open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('chars', 'readonly');
+      const r = tx.objectStore('chars').get(ch);
+      r.onsuccess = () => resolve(r.result || null);
+      r.onerror = () => reject(r.error);
+    });
+  }
+  async function getAll() {
+    const db = await open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('chars', 'readonly');
+      const r = tx.objectStore('chars').getAll();
+      r.onsuccess = () => resolve(r.result || []);
+      r.onerror = () => reject(r.error);
+    });
+  }
+  async function putChar(entry) {
+    const db = await open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('chars', 'readwrite');
+      tx.objectStore('chars').put(entry);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+  return { getChar, getAll, putChar };
+})();
+
+const Settings = {
+  KEY: 'handschrift-settings-v1',
+  load() {
+    try {
+      const raw = localStorage.getItem(this.KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return {};
+  },
+  save(obj) {
+    try { localStorage.setItem(this.KEY, JSON.stringify(obj)); } catch (e) {}
+  }
+};
+
+/* In-memory cache of captured character data, keyed by char -> {char, variants:[{strokes,bbox}]} */
+const CharDB = {
+  cache: new Map(),
+  async loadAll() {
+    const all = await Store.getAll();
+    this.cache.clear();
+    all.forEach(e => this.cache.set(e.char, e));
+    return this.cache;
+  },
+  get(ch) { return this.cache.get(ch) || null; },
+  async save(ch, entry) {
+    this.cache.set(ch, entry);
+    await Store.putChar(entry);
+  },
+  countCaptured() {
+    let n = 0;
+    ALL_CHARS.forEach(c => { if (this.cache.has(c) && this.cache.get(c).variants.length > 0) n++; });
+    return n;
+  },
+  groupDone(groupId) {
+    const g = GROUPS.find(x => x.id === groupId);
+    return g.chars.every(c => this.cache.has(c) && this.cache.get(c).variants.length > 0);
+  }
+};
+
+/* =========================================================================
+   3) UTILITIES
+   ========================================================================= */
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove('show'), 1800);
+}
+function rand(min, max) { return min + Math.random() * (max - min); }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+/* mm -> px at 96dpi-ish rendering scale used for on-screen canvas (we use a fixed CSS px "paper" unit) */
+const PAGE_SIZES = { // in mm
+  a4: { w: 210, h: 297 },
+  a5: { w: 148, h: 210 },
+  letter: { w: 215.9, h: 279.4 },
+};
+const PX_PER_MM = 7.56; // ~192dpi — deutlich schärfer für Export/Druck als reine Bildschirmauflösung
+
+/* =========================================================================
+   4) HANDSCHRIFT-ERFASSUNG (Capture)
+   ========================================================================= */
+const Capture = (() => {
+  let currentChar = null;
+  let currentIndex = 0;
+  let currentVariantIdx = 0;
+  let variantsBuffer = []; // working copy of variants for currentChar: [{strokes:[[{x,y,p}]], bbox}]
+  let strokes = [];        // strokes for the variant currently being drawn
+  let activeStroke = null;
+  let canvas, ctx;
+  let dpr = Math.max(1, window.devicePixelRatio || 1);
+
+  function init() {
+    canvas = document.getElementById('cm-canvas');
+    ctx = canvas.getContext('2d');
+    sizeCanvas();
+    window.addEventListener('resize', sizeCanvas);
+
+    canvas.addEventListener('pointerdown', onDown);
+    canvas.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    canvas.addEventListener('pointerleave', onLeaveMaybe);
+
+    document.getElementById('cm-close').addEventListener('click', close);
+    document.getElementById('modal-overlay').addEventListener('click', (e) => {
+      if (e.target.id === 'modal-overlay') close();
+    });
+    document.getElementById('cm-clear').addEventListener('click', clearCurrentVariant);
+    document.getElementById('cm-undo').addEventListener('click', undoStroke);
+    document.getElementById('cm-save').addEventListener('click', saveAndAdvance);
+    document.getElementById('cm-prev').addEventListener('click', () => go(-1));
+    document.getElementById('cm-next').addEventListener('click', () => go(1));
+  }
+
+  function sizeCanvas() {
+    const wrap = document.getElementById('cm-canvas-wrap');
+    const w = Math.min(440, wrap.clientWidth || 440);
+    const h = w * (CAP_H / CAP_W);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    canvas.width = Math.round(CAP_W * dpr);
+    canvas.height = Math.round(CAP_H * dpr);
+    redraw();
+  }
+
+  function open(ch) {
+    currentChar = ch;
+    currentIndex = ALL_CHARS.indexOf(ch);
+    const existing = CharDB.get(ch);
+    variantsBuffer = existing ? JSON.parse(JSON.stringify(existing.variants)) : [];
+    currentVariantIdx = variantsBuffer.length < MAX_VARIANTS ? variantsBuffer.length : 0;
+    strokes = variantsBuffer[currentVariantIdx] ? variantsBuffer[currentVariantIdx].strokes.map(s => s.slice()) : [];
+    document.getElementById('modal-overlay').classList.add('open');
+    document.getElementById('cm-char').textContent = ch;
+    document.getElementById('cm-position').textContent = `${currentIndex + 1} / ${ALL_CHARS.length}`;
+    renderVariantTabs();
+    sizeCanvas();
+  }
+
+  function close() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    refreshGridTile(currentChar);
+    UI.refreshProgress();
+  }
+
+  function go(delta) {
+    let idx = clamp(currentIndex + delta, 0, ALL_CHARS.length - 1);
+    open(ALL_CHARS[idx]);
+  }
+
+  function renderVariantTabs() {
+    const wrap = document.getElementById('cm-variant-tabs');
+    wrap.innerHTML = '';
+    for (let i = 0; i < MAX_VARIANTS; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'cm-variant-tab' + (i === currentVariantIdx ? ' active' : '');
+      const has = !!variantsBuffer[i];
+      btn.innerHTML = `Variante ${i+1}<span class="vs">${has ? '✓ erfasst' : 'leer'}</span>`;
+      btn.addEventListener('click', () => switchVariant(i));
+      wrap.appendChild(btn);
+    }
+  }
+
+  function switchVariant(i) {
+    currentVariantIdx = i;
+    strokes = variantsBuffer[i] ? variantsBuffer[i].strokes.map(s => s.slice()) : [];
+    renderVariantTabs();
+    redraw();
+  }
+
+  function clearCurrentVariant() {
+    strokes = [];
+    redraw();
+  }
+
+  function undoStroke() {
+    strokes.pop();
+    redraw();
+  }
+
+  function localPoint(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width * CAP_W;
+    const y = (e.clientY - rect.top) / rect.height * CAP_H;
+    const p = (e.pressure && e.pressure > 0) ? e.pressure : 0.5;
+    return { x, y, p };
+  }
+
+  function onDown(e) {
+    canvas.setPointerCapture(e.pointerId);
+    activeStroke = [localPoint(e)];
+    strokes.push(activeStroke);
+    redraw();
+  }
+  function onMove(e) {
+    if (!activeStroke) return;
+    if (e.buttons === 0 && e.pointerType !== 'touch') return;
+    activeStroke.push(localPoint(e));
+    redraw();
+  }
+  function onUp(e) {
+    activeStroke = null;
+  }
+  function onLeaveMaybe(e) {
+    // keep drawing across small leaves for smoother capture near edges; do nothing
+  }
+
+  function drawGuides() {
+    ctx.save();
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, CAP_W, CAP_H);
+    ctx.strokeStyle = '#E4DFD3';
+    ctx.lineWidth = 1;
+    [GUIDE.ascender, GUIDE.capline, GUIDE.xheight, GUIDE.descender].forEach(y => {
+      ctx.beginPath(); ctx.setLineDash([4,4]);
+      ctx.moveTo(6, y); ctx.lineTo(CAP_W - 6, y); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    ctx.strokeStyle = '#B08D57';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(6, GUIDE.baseline); ctx.lineTo(CAP_W - 6, GUIDE.baseline); ctx.stroke();
+    ctx.restore();
+  }
+
+  function redraw() {
+    drawGuides();
+    ctx.save();
+    ctx.scale(dpr, dpr);
+    ctx.strokeStyle = '#211F1B';
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    strokes.forEach(s => {
+      if (s.length < 1) return;
+      ctx.beginPath();
+      ctx.lineWidth = 2.4;
+      if (s.length === 1) {
+        ctx.arc(s[0].x, s[0].y, 1.4, 0, Math.PI * 2);
+        ctx.fillStyle = '#211F1B';
+        ctx.fill();
+        return;
+      }
+      ctx.moveTo(s[0].x, s[0].y);
+      for (let i = 1; i < s.length - 1; i++) {
+        const midX = (s[i].x + s[i+1].x) / 2;
+        const midY = (s[i].y + s[i+1].y) / 2;
+        ctx.quadraticCurveTo(s[i].x, s[i].y, midX, midY);
+      }
+      ctx.lineTo(s[s.length-1].x, s[s.length-1].y);
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  function computeBBox(strokeSet) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    strokeSet.forEach(s => s.forEach(pt => {
+      minX = Math.min(minX, pt.x); maxX = Math.max(maxX, pt.x);
+      minY = Math.min(minY, pt.y); maxY = Math.max(maxY, pt.y);
+    }));
+    if (!isFinite(minX)) { minX = 0; maxX = 0; minY = 0; maxY = 0; }
+    return { minX, minY, maxX, maxY };
+  }
+
+  async function saveAndAdvance() {
+    if (strokes.length === 0 || strokes.every(s => s.length < 2)) {
+      toast('Bitte zuerst das Zeichen schreiben.');
+      return;
+    }
+    const bbox = computeBBox(strokes);
+    variantsBuffer[currentVariantIdx] = { strokes: strokes.map(s => s.slice()), bbox };
+    const entry = { char: currentChar, variants: variantsBuffer.filter(Boolean) };
+    await CharDB.save(currentChar, entry);
+    toast(`„${currentChar}“ gespeichert (Variante ${currentVariantIdx + 1})`);
+    refreshGridTile(currentChar);
+    UI.refreshProgress();
+    renderVariantTabs();
+
+    // auto-advance: next empty variant slot, else next character
+    if (variantsBuffer.length < MAX_VARIANTS) {
+      switchVariant(variantsBuffer.length);
+    } else {
+      go(1);
+    }
+  }
+
+  function refreshGridTile(ch) {
+    const tile = document.querySelector(`.char-tile[data-char="${CSS.escape(ch)}"]`);
+    if (!tile) return;
+    const entry = CharDB.get(ch);
+    const n = entry ? entry.variants.length : 0;
+    tile.classList.remove('partial', 'done');
+    if (n >= MAX_VARIANTS) tile.classList.add('done');
+    else if (n > 0) tile.classList.add('partial');
+    tile.querySelector('.cnt').textContent = `${n}/${MAX_VARIANTS}`;
+  }
+
+  return { init, open };
+})();
+
+/* =========================================================================
+   5) RENDER ENGINE: Text -> handschriftliche Seiten (Canvas)
+   ========================================================================= */
+const RenderEngine = (() => {
+
+  const STYLE_JITTER = {
+    normal: { rot: 2.2, yjit: 1.6, scaleJit: 0.05, spaceJit: 0.10, baselineDrift: 0.6 },
+    clean:  { rot: 0.8, yjit: 0.6, scaleJit: 0.02, spaceJit: 0.05, baselineDrift: 0.2 },
+    fast:   { rot: 3.6, yjit: 2.6, scaleJit: 0.08, spaceJit: 0.16, baselineDrift: 1.1 },
+    messy:  { rot: 5.0, yjit: 3.4, scaleJit: 0.10, spaceJit: 0.20, baselineDrift: 1.6 },
+  };
+  const PEN_STYLE = {
+    ballpoint: { widthMul: 1.0,  pressureEffect: 0.25, alpha: 0.95, roughness: 0 },
+    fineliner: { widthMul: 0.72, pressureEffect: 0.1,  alpha: 1.0,  roughness: 0 },
+    pencil:    { widthMul: 1.1,  pressureEffect: 0.35, alpha: 0.72, roughness: 0.6 },
+    fountain:  { widthMul: 1.25, pressureEffect: 0.6,  alpha: 0.98, roughness: 0.15 },
+  };
+
+  /* ---- Automatische Größen-/Positionserkennung -----------------------------
+     Jedes Zeichen wird nach Erfassung nicht 1:1 übernommen, sondern anhand
+     seiner Kategorie (Großbuchstabe, x-Höhen-Kleinbuchstabe, Unterlänge, …)
+     auf eine einheitliche Ziel-Höhe skaliert und exakt auf der Grundlinie
+     ausgerichtet — unabhängig davon, wie groß/klein oder wie verschoben das
+     Zeichen ursprünglich geschrieben wurde. So ergeben auch "kreuz und quer"
+     geschriebene Buchstaben ein sauber ausgerichtetes Wortbild. */
+  const CAP_UNIT  = GUIDE.baseline - GUIDE.capline;   // Großbuchstaben/Ziffern-Höhe
+  const X_UNIT     = GUIDE.baseline - GUIDE.xheight;   // x-Höhe (kleine Buchstaben)
+  const DESC_UNIT  = GUIDE.descender - GUIDE.baseline; // Unterlänge
+
+  const TALL_LETTERS = new Set('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789bdfhklt'.split('')
+    .concat(['ß','Ä','Ö','Ü','É','È','Ê','Ë','À','Â','Î','Ï','Ô','Ù','Û','Ç','!','?','(',')','[',']','{','}','/','\\','%','&','#']));
+  const SHORT_LETTERS = new Set('acemnorsuvwxz'.split('')
+    .concat(['i','ä','ö','ü','à','â','é','è','ê','ë','î','ï','ô','ù','û','ç','œ']));
+  const DESC_LETTERS = new Set(['g','j','p','q','y',',',';']);
+  /* Symbole, die mittig auf x-Höhe schweben statt auf der Grundlinie zu sitzen */
+  const CENTER_SYMBOLS = new Set(['*','+','=','−','×','÷','≠','≤','≥','±',':']);
+  /* Zeichen, die knapp über der Zeile schweben (Apostroph, Anführungszeichen) */
+  const TOP_MARKS = new Set(["'", '"']);
+  /* Zeichen, die bewusst unter der Grundlinie hängen */
+  const BELOW_MARKS = new Set(['_']);
+
+  function clampScale(s) { return clamp(s, 0.35, 3.2); }
+
+  /* Liefert { normScale, baselineInInk } in Erfassungs-Koordinaten (unabhängig
+     von der Seiten-Schriftgröße). baselineInInk ist die y-Koordinate im
+     Erfassungsraum, die auf die Ziel-Grundlinie der Seite gelegt wird.
+     Ein Mindest-inkH verhindert, dass winzige/fehlerhafte Aufnahmen zu
+     riesigen, andere Buchstaben verdeckenden Zeichen führen. */
+  function computeNormScale(ch, v) {
+    const inkH = Math.max(v.bbox.maxY - v.bbox.minY, 3);
+    const inkCenterY = (v.bbox.minY + v.bbox.maxY) / 2;
+
+    if (DESC_LETTERS.has(ch)) {
+      const target = X_UNIT + DESC_UNIT;
+      const ratio = X_UNIT / target; // Anteil oberhalb der Grundlinie
+      return { normScale: clampScale(target / inkH), baselineInInk: v.bbox.minY + inkH * ratio };
+    }
+    if (TALL_LETTERS.has(ch)) {
+      return { normScale: clampScale(CAP_UNIT / inkH), baselineInInk: v.bbox.maxY };
+    }
+    if (SHORT_LETTERS.has(ch)) {
+      return { normScale: clampScale(X_UNIT / inkH), baselineInInk: v.bbox.maxY };
+    }
+    if (CENTER_SYMBOLS.has(ch)) {
+      // Zentrum des Zeichens auf halbe x-Höhe über der Grundlinie legen
+      return { normScale: 1, baselineInInk: inkCenterY + X_UNIT * 0.5 };
+    }
+    if (TOP_MARKS.has(ch)) {
+      // Zentrum nahe der Oberlänge platzieren
+      return { normScale: 1, baselineInInk: inkCenterY + CAP_UNIT * 0.85 };
+    }
+    if (BELOW_MARKS.has(ch)) {
+      // Zentrum leicht unter die Grundlinie setzen
+      return { normScale: 1, baselineInInk: inkCenterY - DESC_UNIT * 0.25 };
+    }
+    // übrige Satzzeichen/Symbole: Originalgröße behalten, unten an der Grundlinie verankern
+    return { normScale: 1, baselineInInk: v.bbox.maxY };
+  }
+
+
+  /* Simple superscript parsing: caret ^ marks next token (single char or {..}) as superscript */
+  function tokenizeMath(word) {
+    // returns array of {ch, sup:boolean}
+    const out = [];
+    let i = 0;
+    while (i < word.length) {
+      if (word[i] === '^' && i + 1 < word.length) {
+        i++;
+        if (word[i] === '{') {
+          let j = word.indexOf('}', i);
+          if (j === -1) j = word.length;
+          const inner = word.slice(i + 1, j);
+          inner.split('').forEach(c => out.push({ ch: c, sup: true }));
+          i = j + 1;
+        } else {
+          out.push({ ch: word[i], sup: true });
+          i++;
+        }
+      } else {
+        out.push({ ch: word[i], sup: false });
+        i++;
+      }
+    }
+    return out;
+  }
+
+  /* Ein einzelner, isoliert weit außerhalb der eigentlichen Buchstabenform
+     liegender Tupfer ist fast immer eine versehentliche Berührung beim
+     Erfassen (z. B. beim Abheben des Stifts) — nicht Teil des Zeichens.
+     Solche Ausreißer würden sonst die Bounding-Box künstlich aufblähen und
+     dadurch riesige, kaum sichtbare Lücken nach dem Zeichen erzeugen. */
+  function cleanStrokes(strokes) {
+    if (strokes.length <= 1) return strokes;
+    const real = strokes.filter(s => s.length > 1);
+    const base = real.length ? real : strokes;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    base.forEach(s => s.forEach(p => {
+      minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+      minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+    }));
+    const w = (maxX - minX) || 1, h = (maxY - minY) || 1;
+    const padX = w * 0.4 + 10, padY = h * 0.4 + 10;
+    return strokes.filter(s => {
+      if (s.length > 1) return true;
+      const p = s[0];
+      return p.x >= minX - padX && p.x <= maxX + padX && p.y >= minY - padY && p.y <= maxY + padY;
+    });
+  }
+
+  function bboxOfStrokes(strokes) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    strokes.forEach(s => s.forEach(p => {
+      minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+      minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+    }));
+    if (!isFinite(minX)) return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+    return { minX, minY, maxX, maxY };
+  }
+
+  function getVariant(ch) {
+    const entry = CharDB.get(ch);
+    if (!entry || !entry.variants.length) return null;
+    const raw = pick(entry.variants);
+    const strokes = cleanStrokes(raw.strokes);
+    if (strokes.length === raw.strokes.length) return raw; // nichts gefiltert, Original (inkl. gespeicherter bbox) verwenden
+    return { strokes, bbox: bboxOfStrokes(strokes) };
+  }
+
+  /* Liefert die fertige Vorschubbreite in Seiten-Pixeln (bereits mit scale/isSup
+     verrechnet), damit Mess-Durchlauf (Zeilenumbruch) und Zeichnen-Durchlauf
+     garantiert dieselbe Breite verwenden — das war zuvor nicht der Fall und
+     hat besonders bei nicht erfassten Zeichen zu falschen, teils riesigen
+     Lücken geführt. */
+  function glyphAdvance(ch, ctxMeasure, scale, isSup) {
+    const effScale = scale * (isSup ? 0.62 : 1);
+    const v = getVariant(ch);
+    if (v) {
+      const norm = computeNormScale(ch, v);
+      const s = effScale * norm.normScale;
+      return ((v.bbox.maxX - v.bbox.minX) * s) || CAP_W * 0.18 * effScale;
+    }
+    if (ch === ' ') return CAP_W * 0.42 * effScale;
+    const fpx = effScale * (CAP_H * 0.42);
+    ctxMeasure.font = `${fpx}px 'Caveat', cursive`;
+    const m = ctxMeasure.measureText(ch);
+    return (m && m.width) ? m.width : fpx * 0.52;
+  }
+
+  function drawGlyph(ctx, ch, x, baselineY, scale, opts, jitter, isSup) {
+    const v = getVariant(ch);
+    const effScale = scale * (isSup ? 0.62 : 1);
+    const effBaselineY = baselineY - (isSup ? scale * (GUIDE.baseline - GUIDE.xheight) * 0.9 : 0);
+    if (ch === ' ') return glyphAdvance(ch, ctx, scale, isSup) + jitter.spacePx;
+
+    if (v) {
+      const norm = computeNormScale(ch, v);
+      const s = effScale * norm.normScale * (1 + rand(-jitter.scaleJit, jitter.scaleJit));
+      const rot = rand(-jitter.rot, jitter.rot) * Math.PI / 180;
+      const yOff = rand(-jitter.yjit, jitter.yjit);
+      const originX = x - v.bbox.minX * s;
+      const originY = (effBaselineY + yOff) - norm.baselineInInk * s;
+
+      ctx.save();
+      ctx.translate(x, effBaselineY + yOff);
+      ctx.rotate(rot);
+      ctx.translate(-x, -(effBaselineY + yOff));
+      ctx.strokeStyle = opts.color;
+      ctx.fillStyle = opts.color;
+      ctx.globalAlpha = opts.alpha;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+
+      v.strokes.forEach(stroke => {
+        if (stroke.length === 0) return;
+        ctx.beginPath();
+        const pr = (pt) => (opts.pressureEffect ? (0.6 + (pt.p || 0.5) * opts.pressureEffect) : 1);
+        const toX = (pt) => originX + pt.x * s;
+        const toY = (pt) => originY + pt.y * s;
+        if (stroke.length === 1) {
+          const dotR = Math.max(opts.width * 0.9, 1.3);
+          ctx.arc(toX(stroke[0]), toY(stroke[0]), dotR, 0, Math.PI * 2);
+          ctx.fill();
+          return;
+        }
+        ctx.lineWidth = opts.width * pr(stroke[0]);
+        ctx.moveTo(toX(stroke[0]), toY(stroke[0]));
+        for (let i = 1; i < stroke.length - 1; i++) {
+          const mx = (toX(stroke[i]) + toX(stroke[i+1])) / 2;
+          const my = (toY(stroke[i]) + toY(stroke[i+1])) / 2;
+          ctx.quadraticCurveTo(toX(stroke[i]), toY(stroke[i]), mx, my);
+        }
+        ctx.lineTo(toX(stroke[stroke.length-1]), toY(stroke[stroke.length-1]));
+        ctx.stroke();
+      });
+      ctx.restore();
+      ctx.globalAlpha = 1;
+      return (v.bbox.maxX - v.bbox.minX) * s + jitter.spacePx;
+    } else {
+      // Fallback: render with cursive web font
+      ctx.save();
+      const fpx = effScale * (CAP_H * 0.42);
+      ctx.font = `${fpx}px 'Caveat', cursive`;
+      ctx.fillStyle = opts.color;
+      ctx.globalAlpha = opts.alpha * 0.92;
+      const measured = ctx.measureText(ch); // VOR restore() messen, sonst gilt wieder die alte Schriftart
+      const rot = rand(-jitter.rot, jitter.rot) * Math.PI / 180;
+      const yOff = rand(-jitter.yjit, jitter.yjit);
+      ctx.translate(x, effBaselineY + yOff);
+      ctx.rotate(rot);
+      ctx.fillText(ch, 0, 0);
+      ctx.restore();
+      ctx.globalAlpha = 1;
+      const w = (measured && measured.width) ? measured.width : fpx * 0.52;
+      return w + jitter.spacePx;
+    }
+  }
+
+  /* ---- Paper background ---- */
+  function drawPaper(ctx, w, h, paperType, marginPx, lineHeightPx) {
+    ctx.fillStyle = '#FFFEFC';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = '#CFE0EE';
+    ctx.lineWidth = 1;
+    if (paperType === 'lined') {
+      for (let y = marginPx + lineHeightPx; y < h - marginPx * 0.6; y += lineHeightPx) {
+        ctx.beginPath(); ctx.moveTo(marginPx * 0.5, y); ctx.lineTo(w - marginPx * 0.5, y); ctx.stroke();
+      }
+    } else if (paperType === 'grid') {
+      const step = lineHeightPx * 0.5;
+      ctx.strokeStyle = '#DCE7E0';
+      for (let y = marginPx; y < h - marginPx * 0.4; y += step) {
+        ctx.beginPath(); ctx.moveTo(marginPx * 0.5, y); ctx.lineTo(w - marginPx * 0.5, y); ctx.stroke();
+      }
+      for (let x = marginPx * 0.5; x < w - marginPx * 0.3; x += step) {
+        ctx.beginPath(); ctx.moveTo(x, marginPx * 0.4); ctx.lineTo(x, h - marginPx * 0.4); ctx.stroke();
+      }
+    } else if (paperType === 'mm') {
+      const step = 8; // ~mm-ish visual grid
+      ctx.strokeStyle = '#E3EDF5';
+      ctx.lineWidth = 0.5;
+      for (let y = 0; y < h; y += step) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+      for (let x = 0; x < w; x += step) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+      ctx.strokeStyle = '#BFD6E8';
+      ctx.lineWidth = 1;
+      const bigStep = step * 5;
+      for (let y = 0; y < h; y += bigStep) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+      for (let x = 0; x < w; x += bigStep) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+    }
+    // 'blank' -> nothing more
+  }
+
+  /* ---- Layout + render full document into an array of canvases ---- */
+  function renderDocument(text, settings) {
+    const sizeMM = PAGE_SIZES[settings.pageSize] || PAGE_SIZES.a4;
+    const pageWpx = Math.round(sizeMM.w * PX_PER_MM);
+    const pageHpx = Math.round(sizeMM.h * PX_PER_MM);
+    const marginPx = Math.round(settings.marginMm * PX_PER_MM);
+    const fontPx = settings.fontSize * (PX_PER_MM * 0.3527) * (96/72) / (96/72); // pt->px approx at our scale
+    const fontPxReal = settings.fontSize * 1.333 * (PX_PER_MM / 3.78); // pt to px baseline (96dpi) scaled to our page px-per-mm
+    const scale = fontPxReal / CAP_H * 1.55; // map capture units to page px so that cap-height ~ fontSize
+    const lineHeightPx = fontPxReal * settings.lineHeight * 1.9;
+    const contentW = pageWpx - marginPx * 2;
+
+    const jitterBase = STYLE_JITTER[settings.style] || STYLE_JITTER.normal;
+    const pen = PEN_STYLE[settings.pen] || PEN_STYLE.ballpoint;
+    const penWidth = Math.max(1, fontPxReal * 0.06 * pen.widthMul);
+
+    const paragraphs = text.split(/\n/);
+    const pages = [];
+    let canvas = null, ctx = null, curY = marginPx + lineHeightPx * 0.6;
+
+    function newPage() {
+      canvas = document.createElement('canvas');
+      canvas.width = pageWpx; canvas.height = pageHpx;
+      ctx = canvas.getContext('2d');
+      drawPaper(ctx, pageWpx, pageHpx, settings.paper, marginPx, lineHeightPx);
+      pages.push(canvas);
+      curY = marginPx + lineHeightPx * 0.85;
+    }
+    newPage();
+
+    // measure helper ctx for fallback font metrics
+    const measureCtx = document.createElement('canvas').getContext('2d');
+    measureCtx.font = `${fontPxReal}px 'Caveat', cursive`;
+
+    function wordWidth(word) {
+      let w = 0;
+      const toks = tokenizeMath(word);
+      toks.forEach(t => { w += glyphAdvance(t.ch, measureCtx, scale, t.sup); });
+      w += (toks.length) * (fontPxReal * jitterBase.spaceJit * 0.5);
+      return w;
+    }
+
+    paragraphs.forEach((para, pIdx) => {
+      if (para.trim() === '') {
+        curY += lineHeightPx * 0.8;
+        if (curY > pageHpx - marginPx) newPage();
+        return;
+      }
+      const words = para.split(/(\s+)/).filter(w => w.length > 0);
+      let lineWords = [];
+      let lineW = 0;
+
+      function flushLine(justify) {
+        if (lineWords.length === 0) return;
+        if (curY > pageHpx - marginPx) newPage();
+        let cx = marginPx + rand(-1, 1) * jitterBase.baselineDrift;
+        const baseY = curY;
+        lineWords.forEach(word => {
+          const toks = tokenizeMath(word);
+          toks.forEach(t => {
+            const jitter = {
+              rot: jitterBase.rot, yjit: jitterBase.yjit, scaleJit: jitterBase.scaleJit,
+              spacePx: fontPxReal * jitterBase.spaceJit * rand(0.4, 1.2) * 0.5
+            };
+            const opts = { color: settings.color, width: penWidth * (t.sup?0.8:1), alpha: pen.alpha, pressureEffect: pen.pressureEffect };
+            const drift = rand(-jitterBase.baselineDrift, jitterBase.baselineDrift);
+            const adv = drawGlyph(ctx, t.ch, cx, baseY + drift, scale, opts, jitter, t.sup);
+            cx += adv;
+          });
+        });
+        curY += lineHeightPx;
+      }
+
+      words.forEach(word => {
+        if (/^\s+$/.test(word)) {
+          lineW += fontPxReal * 0.5;
+          lineWords.push(' ');
+          return;
+        }
+        const w = wordWidth(word);
+        // Wort ist länger als eine ganze Zeile: in passende Stücke zerlegen,
+        // statt es über den Seitenrand hinauslaufen (und damit "verschwinden") zu lassen
+        if (w > contentW) {
+          let chunk = '';
+          for (const c of word) {
+            const testChunk = chunk + c;
+            if (wordWidth(testChunk) > contentW && chunk) {
+              if (lineW + wordWidth(chunk) > contentW && lineWords.length > 0) {
+                flushLine(); lineWords = []; lineW = 0;
+              }
+              lineWords.push(chunk); lineW += wordWidth(chunk);
+              flushLine(); lineWords = []; lineW = 0;
+              chunk = c;
+            } else {
+              chunk = testChunk;
+            }
+          }
+          if (chunk) { lineWords.push(chunk); lineW += wordWidth(chunk); }
+          return;
+        }
+        if (lineW + w > contentW && lineWords.length > 0) {
+          flushLine();
+          lineWords = [];
+          lineW = 0;
+        }
+        lineWords.push(word);
+        lineW += w;
+      });
+      flushLine();
+    });
+
+    return { pages, pageWpx, pageHpx };
+  }
+
+  return { renderDocument, tokenizeMath };
+})();
+
+/* =========================================================================
+   6) EXPORT: PNG / JPG / PDF / Drucken / Kopieren
+   ========================================================================= */
+const Exporter = (() => {
+  function combineToBlob(pages, type, quality) {
+    // For single-page quick export use first page; for multi-page PNG/JPG we export a zip-less
+    // stacked strip is complex, so PNG/JPG export the currently visible/rendered pages individually
+    // by triggering multiple downloads when more than one page exists.
+    return pages.map(c => new Promise(resolve => c.toBlob(resolve, type, quality)));
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  async function exportPNG(pages) {
+    for (let i = 0; i < pages.length; i++) {
+      const blob = await new Promise(res => pages[i].toBlob(res, 'image/png'));
+      downloadBlob(blob, `handschrift-seite-${i + 1}.png`);
+      if (i < pages.length - 1) await new Promise(r => setTimeout(r, 180)); // Downloads nacheinander, sonst blockieren Browser oft ab dem 2. Download
+    }
+    toast(pages.length > 1 ? `${pages.length} Seiten als PNG heruntergeladen` : 'PNG heruntergeladen');
+  }
+  async function exportJPG(pages) {
+    for (let i = 0; i < pages.length; i++) {
+      // JPG needs opaque background; our pages already have white paper bg.
+      const blob = await new Promise(res => pages[i].toBlob(res, 'image/jpeg', 0.92));
+      downloadBlob(blob, `handschrift-seite-${i + 1}.jpg`);
+      if (i < pages.length - 1) await new Promise(r => setTimeout(r, 180));
+    }
+    toast(pages.length > 1 ? `${pages.length} Seiten als JPG heruntergeladen` : 'JPG heruntergeladen');
+  }
+  async function exportPDF(pages, pageWpx, pageHpx) {
+    if (!window.jspdf) { toast('PDF-Bibliothek konnte nicht geladen werden — bitte Internetverbindung prüfen und neu laden.'); return; }
+    const { jsPDF } = window.jspdf;
+    const orientation = pageWpx > pageHpx ? 'l' : 'p';
+    const wMM = pageWpx / PX_PER_MM, hMM = pageHpx / PX_PER_MM;
+    const doc = new jsPDF({ orientation, unit: 'mm', format: [wMM, hMM] });
+    for (let i = 0; i < pages.length; i++) {
+      const dataUrl = pages[i].toDataURL('image/jpeg', 0.95);
+      if (i > 0) doc.addPage([wMM, hMM], orientation);
+      doc.addImage(dataUrl, 'JPEG', 0, 0, wMM, hMM);
+    }
+    doc.save('handschrift.pdf');
+    toast('PDF erstellt');
+  }
+  /* Muss synchron (ohne await davor) aus dem Klick-Handler aufgerufen werden,
+     sonst blockieren Safari/Chrome den Zugriff auf die Zwischenablage, weil er
+     dann nicht mehr als direkte Nutzeraktion erkannt wird. Deshalb wird hier
+     ein Promise als Bild-Wert übergeben, statt vorher auf den Blob zu warten. */
+  function copyImage(pages) {
+    if (pages.length === 0) return;
+    if (!navigator.clipboard || !window.ClipboardItem) {
+      toast('Kopieren wird von diesem Browser nicht unterstützt');
+      return;
+    }
+    try {
+      const blobPromise = new Promise(resolve => pages[0].toBlob(resolve, 'image/png'));
+      navigator.clipboard.write([new ClipboardItem({ 'image/png': blobPromise })])
+        .then(() => toast(pages.length > 1 ? 'Erste Seite in die Zwischenablage kopiert' : 'Bild in die Zwischenablage kopiert'))
+        .catch(() => toast('Kopieren wird von diesem Browser nicht unterstützt'));
+    } catch (e) {
+      toast('Kopieren wird von diesem Browser nicht unterstützt');
+    }
+  }
+  /* Öffnet das Druckfenster SOFORT synchron (Pop-up-Blocker erlauben das nur,
+     wenn window.open ohne vorheriges await direkt im Klick-Handler passiert)
+     und befüllt es danach. */
+  function printPages(pages) {
+    const w = window.open('', '_blank');
+    if (!w) { toast('Pop-up wurde blockiert — bitte für diese Seite erlauben und erneut versuchen.'); return; }
+    const imgs = pages.map(c => `<img src="${c.toDataURL('image/png')}" style="width:100%;display:block;page-break-after:always;">`).join('');
+    w.document.write(`<!DOCTYPE html><html><head><title>Drucken</title>
+      <style>@page{margin:0;} body{margin:0;} img:last-child{page-break-after:auto;}</style>
+      </head><body>${imgs}</body></html>`);
+    w.document.close();
+    w.onload = () => { w.focus(); w.print(); };
+  }
+
+  return { exportPNG, exportJPG, exportPDF, copyImage, printPages };
+})();
+
+/* =========================================================================
+   6b) PROFIL-SICHERUNG: Handschrift-Profil als Datei exportieren/importieren
+   ========================================================================= */
+const ProfileIO = (() => {
+  async function exportProfile() {
+    const all = await Store.getAll();
+    if (all.length === 0) {
+      toast('Noch keine Zeichen erfasst — es gibt nichts zu sichern.');
+      return;
+    }
+    const payload = {
+      app: 'handschrift-profil',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      chars: all,
+    };
+    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `handschrift-profil-${stamp}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast(`Profil gesichert (${all.length} Zeichen). Bewahre die Datei an einem sicheren Ort auf.`);
+  }
+
+  function readFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(file);
+    });
+  }
+
+  async function importProfile(file) {
+    let data;
+    try {
+      const text = await readFile(file);
+      data = JSON.parse(text);
+    } catch (e) {
+      toast('Diese Datei konnte nicht gelesen werden.');
+      return;
+    }
+    if (!data || !Array.isArray(data.chars)) {
+      toast('Das ist keine gültige Handschrift-Profil-Datei.');
+      return;
+    }
+    let imported = 0;
+    for (const entry of data.chars) {
+      if (!entry || typeof entry.char !== 'string' || !Array.isArray(entry.variants)) continue;
+      await CharDB.save(entry.char, entry);
+      imported++;
+    }
+    UI.refreshProgress();
+    toast(`${imported} Zeichen aus der Datei übernommen.`);
+  }
+
+  return { exportProfile, importProfile };
+})();
+
+/* =========================================================================
+   7) UI CONTROLLER
+   ========================================================================= */
+const UI = (() => {
+  let settings = Object.assign({
+    paper: 'lined',
+    pageSize: 'a4',
+    pen: 'ballpoint',
+    color: '#1B1B1E',
+    style: 'normal',
+    fontSize: 18,
+    lineHeight: 1.0,
+    marginMm: 18,
+  }, Settings.load());
+
+  let lastRender = null; // { pages, pageWpx, pageHpx }
+  let renderTimer = null;
+
+  function persistSettings() { Settings.save(settings); }
+
+  function initTabs() {
+    document.getElementById('tabs').addEventListener('click', (e) => {
+      const btn = e.target.closest('.tab-btn');
+      if (!btn) return;
+      switchView(btn.dataset.view);
+    });
+    document.getElementById('progress-chip').addEventListener('click', () => switchView('capture'));
+  }
+
+  function switchView(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.view === name));
+    document.getElementById('view-editor').classList.toggle('active', name === 'editor');
+    document.getElementById('view-editor').style.display = name === 'editor' ? 'flex' : 'none';
+    document.getElementById('view-capture').classList.toggle('active', name === 'capture');
+    document.getElementById('view-capture').style.display = name === 'capture' ? 'flex' : 'none';
+  }
+
+  function initSidebarControls() {
+    const $ = (id) => document.getElementById(id);
+
+    $('opt-paper').value = settings.paper;
+    $('opt-pagesize').value = settings.pageSize;
+    $('opt-fontsize').value = settings.fontSize;
+    $('opt-lineheight').value = settings.lineHeight;
+    $('opt-margin').value = settings.marginMm;
+    updateRangeLabels();
+
+    $('opt-paper').addEventListener('change', (e) => { settings.paper = e.target.value; persistSettings(); scheduleRender(); });
+    $('opt-pagesize').addEventListener('change', (e) => { settings.pageSize = e.target.value; persistSettings(); scheduleRender(); });
+
+    document.getElementById('opt-pen').addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      setSeg('opt-pen', b); settings.pen = b.dataset.v; persistSettings(); scheduleRender();
+    });
+    document.getElementById('opt-style').addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      setSeg('opt-style', b); settings.style = b.dataset.v; persistSettings(); scheduleRender();
+    });
+    document.getElementById('opt-color').addEventListener('click', (e) => {
+      const sw = e.target.closest('.swatch'); if (!sw) return;
+      document.querySelectorAll('#opt-color .swatch').forEach(s => s.classList.remove('selected'));
+      sw.classList.add('selected');
+      settings.color = sw.dataset.c;
+      persistSettings(); scheduleRender();
+    });
+    $('opt-color-custom').addEventListener('input', (e) => {
+      document.querySelectorAll('#opt-color .swatch').forEach(s => s.classList.remove('selected'));
+      settings.color = e.target.value;
+      persistSettings(); scheduleRender();
+    });
+
+    $('opt-fontsize').addEventListener('input', (e) => { settings.fontSize = +e.target.value; updateRangeLabels(); persistSettings(); scheduleRender(); });
+    $('opt-lineheight').addEventListener('input', (e) => { settings.lineHeight = +e.target.value; updateRangeLabels(); persistSettings(); scheduleRender(); });
+    $('opt-margin').addEventListener('input', (e) => { settings.marginMm = +e.target.value; updateRangeLabels(); persistSettings(); scheduleRender(); });
+
+    function setSeg(groupId, btn) {
+      document.querySelectorAll(`#${groupId} button`).forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    function updateRangeLabels() {
+      document.getElementById('v-fontsize').textContent = settings.fontSize + ' pt';
+      document.getElementById('v-lineheight').textContent = settings.lineHeight.toFixed(1) + '×';
+      document.getElementById('v-margin').textContent = settings.marginMm + ' mm';
+    }
+
+    document.getElementById('btn-toggle-sidebar').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.toggle('open');
+    });
+    document.getElementById('btn-mobile-preview').addEventListener('click', () => {
+      const split = document.getElementById('split');
+      split.classList.toggle('show-preview');
+      const btn = document.getElementById('btn-mobile-preview');
+      btn.textContent = split.classList.contains('show-preview') ? '✎ Editor' : '👁 Vorschau';
+    });
+  }
+
+  function initTextInput() {
+    const ta = document.getElementById('text-input');
+    ta.addEventListener('input', scheduleRender);
+  }
+
+  function scheduleRender() {
+    clearTimeout(renderTimer);
+    renderTimer = setTimeout(doRender, 220);
+  }
+
+  function doRender() {
+    const text = document.getElementById('text-input').value;
+    const emptyHint = document.getElementById('empty-hint');
+    const pane = document.getElementById('preview-pane');
+    if (!text.trim()) {
+      pane.querySelectorAll('.page-shell').forEach(n => n.remove());
+      emptyHint.style.display = 'block';
+      document.getElementById('page-count-label').textContent = '';
+      lastRender = null;
+      return;
+    }
+    emptyHint.style.display = 'none';
+    const result = RenderEngine.renderDocument(text, settings);
+    lastRender = result;
+    pane.querySelectorAll('.page-shell').forEach(n => n.remove());
+    result.pages.forEach((canvas, i) => {
+      const shell = document.createElement('div');
+      shell.className = 'page-shell';
+      const displayCanvas = document.createElement('canvas');
+      displayCanvas.width = canvas.width; displayCanvas.height = canvas.height;
+      displayCanvas.style.width = Math.min(560, canvas.width) + 'px';
+      displayCanvas.style.height = (displayCanvas.style.width.replace('px','') * (canvas.height/canvas.width)) + 'px';
+      const dctx = displayCanvas.getContext('2d');
+      dctx.drawImage(canvas, 0, 0);
+      shell.appendChild(displayCanvas);
+      pane.appendChild(shell);
+    });
+    document.getElementById('page-count-label').textContent = `${result.pages.length} Seite${result.pages.length>1?'n':''}`;
+  }
+
+  /* ---- Capture grid ---- */
+  function buildCaptureGrid() {
+    const wrap = document.getElementById('groups-wrap');
+    wrap.innerHTML = '';
+    GROUPS.forEach(g => {
+      const section = document.createElement('div');
+      section.className = 'group';
+      const h2 = document.createElement('h2');
+      h2.textContent = g.label;
+      section.appendChild(h2);
+      const grid = document.createElement('div');
+      grid.className = 'char-grid';
+      g.chars.forEach(ch => {
+        const tile = document.createElement('button');
+        tile.className = 'char-tile';
+        tile.dataset.char = ch;
+        tile.innerHTML = `<span class="glyph">${ch === ' ' ? '␣' : ch}</span><span class="cnt">0/${MAX_VARIANTS}</span>`;
+        tile.addEventListener('click', () => Capture.open(ch));
+        grid.appendChild(tile);
+      });
+      section.appendChild(grid);
+      wrap.appendChild(section);
+    });
+  }
+
+  function refreshProgress() {
+    const total = ALL_CHARS.length;
+    const done = CharDB.countCaptured();
+    const pct = total ? Math.round((done / total) * 100) : 0;
+
+    document.getElementById('progress-text').textContent = `${pct}% erfasst`;
+    const circumference = 2 * Math.PI * 15.5;
+    const ring = document.getElementById('ring-fill');
+    ring.setAttribute('stroke-dasharray', circumference.toFixed(1));
+    ring.setAttribute('stroke-dashoffset', (circumference * (1 - pct / 100)).toFixed(1));
+
+    document.getElementById('cap-progress-fill').style.width = pct + '%';
+    document.getElementById('cap-progress-label').textContent = `${done} / ${total} Zeichen`;
+
+    const chipsWrap = document.getElementById('cat-chips');
+    chipsWrap.innerHTML = '';
+    GROUPS.forEach(g => {
+      const chip = document.createElement('div');
+      const done = CharDB.groupDone(g.id);
+      chip.className = 'cat-chip' + (done ? ' done' : '');
+      chip.innerHTML = `<span class="dot"></span>${g.label}`;
+      chipsWrap.appendChild(chip);
+    });
+
+    document.querySelectorAll('.char-tile').forEach(tile => {
+      const ch = tile.dataset.char;
+      const entry = CharDB.get(ch);
+      const n = entry ? entry.variants.length : 0;
+      tile.classList.remove('partial', 'done');
+      if (n >= MAX_VARIANTS) tile.classList.add('done');
+      else if (n > 0) tile.classList.add('partial');
+      tile.querySelector('.cnt').textContent = `${n}/${MAX_VARIANTS}`;
+    });
+  }
+
+  function initExportMenu() {
+    const toggle = document.getElementById('export-toggle');
+    const menu = document.getElementById('export-menu');
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menu.classList.toggle('open');
+    });
+    document.addEventListener('click', () => menu.classList.remove('open'));
+    menu.addEventListener('click', (e) => e.stopPropagation());
+
+    menu.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-export]');
+      if (!btn) return;
+      menu.classList.remove('open');
+
+      const text = document.getElementById('text-input').value;
+      if (!text.trim()) {
+        toast('Schreibe zuerst etwas Text, um zu exportieren.');
+        return;
+      }
+
+      // Aktuellsten Stand synchron rendern (keine veraltete, debounced Vorschau verwenden)
+      clearTimeout(renderTimer);
+      doRender();
+
+      if (!lastRender || lastRender.pages.length === 0) {
+        toast('Es gibt gerade nichts zu exportieren.');
+        return;
+      }
+
+      const kind = btn.dataset.export;
+
+      // Drucken & Kopieren MÜSSEN synchron im Klick-Handler ausgelöst werden,
+      // sonst blockieren Browser das Pop-up bzw. den Zwischenablage-Zugriff.
+      if (kind === 'print') { Exporter.printPages(lastRender.pages); return; }
+      if (kind === 'copy') { Exporter.copyImage(lastRender.pages); return; }
+
+      // PNG/JPG/PDF dürfen asynchron laufen (mehrere Dateien, PDF-Erzeugung)
+      runAsyncExport(btn, kind, lastRender);
+    });
+  }
+
+  async function runAsyncExport(btn, kind, renderResult) {
+    const original = btn.textContent;
+    btn.textContent = 'Wird erstellt …';
+    try {
+      if (kind === 'png') await Exporter.exportPNG(renderResult.pages);
+      else if (kind === 'jpg') await Exporter.exportJPG(renderResult.pages);
+      else if (kind === 'pdf') await Exporter.exportPDF(renderResult.pages, renderResult.pageWpx, renderResult.pageHpx);
+    } catch (err) {
+      console.error(err);
+      toast('Export fehlgeschlagen — bitte erneut versuchen.');
+    } finally {
+      btn.textContent = original;
+    }
+  }
+
+  function applySettingsToControls() {
+    document.querySelectorAll('#opt-pen button').forEach(b => b.classList.toggle('active', b.dataset.v === settings.pen));
+    document.querySelectorAll('#opt-style button').forEach(b => b.classList.toggle('active', b.dataset.v === settings.style));
+    document.querySelectorAll('#opt-color .swatch').forEach(s => s.classList.toggle('selected', s.dataset.c === settings.color));
+  }
+
+  function initProfileIO() {
+    document.getElementById('btn-export-profile').addEventListener('click', () => ProfileIO.exportProfile());
+    const fileInput = document.getElementById('import-file-input');
+    document.getElementById('btn-import-profile').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) await ProfileIO.importProfile(file);
+      fileInput.value = '';
+    });
+  }
+
+  async function init() {
+    initTabs();
+    initSidebarControls();
+    applySettingsToControls();
+    initTextInput();
+    initExportMenu();
+    buildCaptureGrid();
+    initProfileIO();
+    Capture.init();
+    await CharDB.loadAll();
+    refreshProgress();
+    if (window.innerWidth <= 860) {
+      document.getElementById('btn-mobile-preview').style.display = 'inline-flex';
+    }
+  }
+
+  return { init, refreshProgress, switchView };
+})();
+
+UI.init();
+</script>
+</body>
+</html>
